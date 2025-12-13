@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 import '../models/user_session.dart';
 import '../services/api_client.dart';
+import '../services/ocr_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,13 +15,15 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  final TextEditingController _situationController = TextEditingController();
   final ApiClient _apiClient = ApiClient();
+  late final OcrService _ocrService;
+  final ImagePicker _imagePicker = ImagePicker();
 
   bool _isInitializing = true;
   bool _isLoading = false;
   UserSession? _session;
   List<String> _suggestions = [];
+  File? _selectedImage;
 
   String? get _userId => _session?.userId;
   bool get _isPremium => _session?.isPremium ?? false;
@@ -26,13 +31,35 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _ocrService = OcrService();
     _initUser();
   }
 
   @override
   void dispose() {
-    _situationController.dispose();
+    _ocrService.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+
+      if (pickedFile == null) return;
+
+      setState(() {
+        _selectedImage = File(pickedFile.path);
+        _suggestions = [];
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('이미지 선택 실패: $e')),
+      );
+    }
   }
 
   Future<void> _initUser() async {
@@ -61,6 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _session = newSession;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('익명 로그인 실패: $e')),
       );
@@ -73,10 +101,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _generateSuggestions() async {
-    final text = _situationController.text.trim();
-    if (text.isEmpty) {
+    if (_selectedImage == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('상황을 먼저 적어줘!')),
+        const SnackBar(content: Text('이미지를 먼저 선택해줘!')),
       );
       return;
     }
@@ -94,8 +121,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
+      // Step 1: Extract text via OCR
+      final extractedText = await _ocrService.extractTextFromImage(
+        _selectedImage!.path,
+      );
+
+      // Step 2: Generate suggestions
       final res = await _apiClient.generateRizz(
-        conversation: text,
+        conversation: extractedText,
         userId: _userId!,
       );
 
@@ -103,8 +136,9 @@ class _HomeScreenState extends State<HomeScreen> {
         _suggestions = res.suggestions;
       });
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('문장 생성 중 오류: $e')),
+        SnackBar(content: Text('처리 중 오류: $e')),
       );
     } finally {
       if (!mounted) return;
@@ -132,6 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _session = session;
       });
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -142,6 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('구독 조회 중 오류: $e')),
       );
@@ -160,6 +196,7 @@ class _HomeScreenState extends State<HomeScreen> {
       await _apiClient.subscribeMonthly(_userId!);
       await _refreshSubscription();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('구독 신청 중 오류: $e')),
       );
@@ -209,20 +246,68 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               const Text(
-                '상대에게 보내고 싶은 상황을 적어줘',
+                '대화 이미지를 선택해줘',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 8),
-              TextField(
-                controller: _situationController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  hintText: '예) 어제 소개팅 했는데 오늘 첫 연락 뭐라고 보낼까?',
-                  border: OutlineInputBorder(),
+              // Image Preview or Placeholder
+              if (_selectedImage != null)
+                Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                  ),
+                )
+              else
+                Container(
+                  height: 200,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                        color: Colors.grey, style: BorderStyle.solid),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.image_outlined, size: 48, color: Colors.grey),
+                        SizedBox(height: 8),
+                        Text(
+                          '이미지를 선택하면 여기에 표시돼',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
+              const SizedBox(height: 12),
+              // Image Selection Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickImage(ImageSource.gallery),
+                      icon: const Icon(Icons.photo_library),
+                      label: const Text('갤러리'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _pickImage(ImageSource.camera),
+                      icon: const Icon(Icons.camera_alt),
+                      label: const Text('카메라'),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               SizedBox(

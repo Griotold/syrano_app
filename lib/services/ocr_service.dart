@@ -7,14 +7,8 @@ class OcrService {
   OcrService()
       : _textRecognizer = TextRecognizer(script: TextRecognitionScript.korean);
 
-  /// Extract text from image file
-  ///
-  /// Throws:
-  /// - [FileSystemException] if image file is invalid
-  /// - [Exception] if OCR processing fails or no text detected
   Future<String> extractTextFromImage(String imagePath) async {
     final inputImage = InputImage.fromFilePath(imagePath);
-
     try {
       final RecognizedText recognizedText =
           await _textRecognizer.processImage(inputImage);
@@ -25,7 +19,6 @@ class OcrService {
 
       return recognizedText.text;
     } catch (e) {
-      // Already an Exception with user-friendly message, just rethrow
       rethrow;
     }
   }

@@ -6,7 +6,7 @@ import '../models/rizz_response.dart';
 
 class ApiClient {
   static const String _baseUrl =
-      'https://syrano-be-ekalw.ondigitalocean.app';
+      'https://syrano-be-sjtv2.ondigitalocean.app';
 
   final http.Client _client;
 
@@ -107,6 +107,46 @@ class ApiClient {
     if (response.statusCode != 200) {
       throw Exception(
           'generateRizz failed: ${response.statusCode} ${response.body}');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return RizzResponse.fromJson(data);
+  }
+
+  /// POST /rizz/analyze-image - 이미지 업로드 및 OCR + 추천 생성
+  /// 백엔드에서 OCR과 LLM 처리를 모두 수행
+  Future<RizzResponse> analyzeImage({
+    required String imagePath,
+    required String userId,
+    String platform = 'kakao',
+    String relationship = 'first_meet',
+    String style = 'banmal',
+    String tone = 'friendly',
+    int numSuggestions = 3,
+  }) async {
+    final url = _uri('/rizz/analyze-image');
+
+    final request = http.MultipartRequest('POST', url);
+
+    // 이미지 파일 추가
+    request.files.add(
+      await http.MultipartFile.fromPath('image', imagePath),
+    );
+
+    // 메타데이터 추가
+    request.fields['user_id'] = userId;
+    request.fields['platform'] = platform;
+    request.fields['relationship'] = relationship;
+    request.fields['style'] = style;
+    request.fields['tone'] = tone;
+    request.fields['num_suggestions'] = numSuggestions.toString();
+
+    final streamedResponse = await _client.send(request);
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+          'analyzeImage failed: ${response.statusCode} ${response.body}');
     }
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;

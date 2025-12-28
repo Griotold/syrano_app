@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/user_session.dart';
 import '../models/rizz_response.dart';
+import '../models/profile.dart';
 
 class ApiClient {
   static const String _baseUrl =
@@ -151,5 +152,66 @@ class ApiClient {
 
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return RizzResponse.fromJson(data);
+  }
+
+  /// POST /profiles - 프로필 생성
+  Future<Profile> createProfile({
+    required String userId,
+    required String name,
+    required int age,
+    required String gender,
+    String? memo,
+  }) async {
+    final url = _uri('/profiles');
+
+    final response = await _client.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'user_id': userId,
+        'name': name,
+        'age': age,
+        'gender': gender,
+        'memo': memo,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception(
+          'createProfile failed: ${response.statusCode} ${response.body}');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    return Profile.fromJson(data);
+  }
+
+  /// GET /profiles?user_id=xxx - 프로필 목록 조회
+  Future<List<Profile>> getProfiles(String userId) async {
+    final url = _uri('/profiles', query: {'user_id': userId});
+
+    final response = await _client.get(url);
+
+    if (response.statusCode != 200) {
+      throw Exception(
+          'getProfiles failed: ${response.statusCode} ${response.body}');
+    }
+
+    final data = jsonDecode(response.body) as Map<String, dynamic>;
+    final profilesJson = data['profiles'] as List;
+    return profilesJson
+        .map((json) => Profile.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// DELETE /profiles/{profile_id} - 프로필 삭제
+  Future<void> deleteProfile(String profileId) async {
+    final url = _uri('/profiles/$profileId');
+
+    final response = await _client.delete(url);
+
+    if (response.statusCode != 204) {
+      throw Exception(
+          'deleteProfile failed: ${response.statusCode} ${response.body}');
+    }
   }
 }

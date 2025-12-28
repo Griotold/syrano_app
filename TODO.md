@@ -583,7 +583,125 @@ Future<void> _analyzeImage() async {
 
 ## 🟢 Low Priority (Phase 3 이후)
 
-### 10. 디자인 개선 (frontend-design 스킬 활용)
+### 10. 설정 화면 추가
+**상태:** ⏸️ **대기**
+
+**필요한 이유:**
+- 앱 삭제 시 프리미엄 구독 정보 소실 문제 대응
+- 수동 고객 지원 채널 필요
+
+**구현 내용:**
+
+```dart
+// lib/screens/settings_screen.dart
+Scaffold(
+  appBar: AppBar(title: Text('설정')),
+  body: ListView(
+    children: [
+      // 구독 관리 섹션
+      ListTile(
+        leading: Icon(Icons.star),
+        title: Text('프리미엄 업그레이드'),
+        onTap: () { /* 결제 화면 */ },
+      ),
+      
+      // 지원 섹션
+      ListTile(
+        leading: Icon(Icons.email),
+        title: Text('문의하기'),
+        subtitle: Text('support@syrano.app'),
+        onTap: () {
+          launch('mailto:support@syrano.app?subject=문의사항');
+        },
+      ),
+      
+      // 구독 복구 (프리미엄 사용자만)
+      if (isPremium)
+        ListTile(
+          leading: Icon(Icons.restore),
+          title: Text('구독 복구 요청'),
+          subtitle: Text('앱 삭제 후 구독이 사라진 경우'),
+          onTap: () {
+            launch('mailto:support@syrano.app?subject=구독 복구 요청&body=구매 영수증을 첨부해주세요');
+          },
+        ),
+      
+      // FAQ
+      ListTile(
+        leading: Icon(Icons.help),
+        title: Text('자주 묻는 질문'),
+        onTap: () { /* FAQ 화면 */ },
+      ),
+      
+      // 앱 정보
+      ListTile(
+        leading: Icon(Icons.info),
+        title: Text('앱 정보'),
+        subtitle: Text('버전 1.0.0'),
+      ),
+    ],
+  ),
+)
+```
+
+**FAQ 내용 (중요):**
+
+```markdown
+Q: 앱을 삭제했는데 프리미엄 구독이 사라졌어요!
+A: support@syrano.app으로 연락주세요.
+   필요 정보:
+   - 구매 영수증 캡처
+   - 기존에 사용하던 프로필 이름
+   → 24시간 내 복구해드립니다.
+
+Q: 프로필을 삭제하면 복구할 수 있나요?
+A: 현재는 삭제 시 복구가 불가능합니다.
+   신중하게 삭제해주세요.
+```
+
+**HomeScreen에 설정 아이콘 추가:**
+
+```dart
+// lib/screens/home_screen.dart
+AppBar(
+  title: Text('Syrano'),
+  actions: [
+    if (_isPremium) /* Premium 뱃지 */,
+    IconButton(
+      icon: Icon(Icons.settings),
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => SettingsScreen()),
+        );
+      },
+    ),
+  ],
+)
+```
+
+**의존성 추가 (이메일 링크):**
+
+```yaml
+# pubspec.yaml
+dependencies:
+  url_launcher: ^6.2.0  # 이메일 앱 열기
+```
+
+**임시 대응 (설정 화면 없을 때):**
+- 앱스토어 설명에 `📧 문의: support@syrano.app` 명시
+- 사용자가 직접 이메일 앱에서 연락
+
+**우선순위 판단:**
+- **MVP:** 설정 화면 없이 앱스토어 설명만으로 대응
+- **DAU 100+ 시:** 설정 화면 추가
+- **DAU 1000+ 시:** 자동 복구 시스템 (소셜 로그인) 필수
+
+**예상 시간:** 3시간
+
+---
+
+### 11. 디자인 개선 (frontend-design 스킬 활용)
 **상태:** ⏸️ **대기**
 
 **개선 방향:**
@@ -597,7 +715,7 @@ Future<void> _analyzeImage() async {
 
 ---
 
-### 11. 히스토리 기능
+### 12. 히스토리 기능
 **상태:** ⏸️ **대기**
 
 **기능:**
@@ -609,7 +727,7 @@ Future<void> _analyzeImage() async {
 
 ---
 
-### 12. 실제 결제 연동
+### 13. 실제 결제 연동
 **상태:** ⏸️ **대기**
 
 **기능:**

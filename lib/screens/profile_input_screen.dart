@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/profile.dart';
-import '../services/storage_service.dart';
+import '../services/api_client.dart';
 
 class ProfileInputScreen extends StatefulWidget {
-  const ProfileInputScreen({super.key});
+  final String userId;
+
+  const ProfileInputScreen({
+    super.key,
+    required this.userId,
+  });
 
   @override
   State<ProfileInputScreen> createState() => _ProfileInputScreenState();
@@ -11,7 +16,7 @@ class ProfileInputScreen extends StatefulWidget {
 
 class _ProfileInputScreenState extends State<ProfileInputScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _storageService = StorageService();
+  final _apiClient = ApiClient();
 
   final _nameController = TextEditingController();
   final _ageController = TextEditingController();
@@ -34,24 +39,18 @@ class _ProfileInputScreenState extends State<ProfileInputScreen> {
       return;
     }
 
-    // Profile.create() 제거되었으므로 수동 생성
-    // userId는 임시로 빈 문자열 (다음 작업에서 API 연동하면서 수정 예정)
-    final profile = Profile(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      userId: '', // 임시 빈 문자열 (다음 작업에서 API 연동하면서 수정 예정)
-      name: _nameController.text.trim(),
-      age: int.parse(_ageController.text.trim()),
-      gender: _selectedGender,
-      memo: _memoController.text.trim().isEmpty
-          ? null
-          : _memoController.text.trim(),
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
-
     try {
-      // 로컬 저장 (다음 작업에서 API로 변경 예정)
-      await _storageService.saveProfile(profile);
+      // API로 프로필 생성
+      await _apiClient.createProfile(
+        userId: widget.userId,
+        name: _nameController.text.trim(),
+        age: int.parse(_ageController.text.trim()),
+        gender: _selectedGender,
+        memo: _memoController.text.trim().isEmpty
+            ? null
+            : _memoController.text.trim(),
+      );
+
       if (!mounted) return;
       Navigator.pop(context, true);
     } catch (e) {
@@ -151,6 +150,7 @@ class _ProfileInputScreenState extends State<ProfileInputScreen> {
                   label: '메모 (선택)',
                   hint: 'MBTI, 취미, 특징 등을 자유롭게 적어주세요\n예: ENFP, 영화 좋아함, 고양이 키움',
                   maxLines: 4,
+                  maxLength: 50,
                 ),
                 const SizedBox(height: 40),
                 _buildSaveButton(),
@@ -209,6 +209,7 @@ class _ProfileInputScreenState extends State<ProfileInputScreen> {
     required String hint,
     TextInputType? keyboardType,
     int? maxLines,
+    int? maxLength,
     String? Function(String?)? validator,
   }) {
     return Column(
@@ -227,9 +228,11 @@ class _ProfileInputScreenState extends State<ProfileInputScreen> {
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines ?? 1,
+          maxLength: maxLength,
           validator: validator,
           decoration: InputDecoration(
             hintText: hint,
+            counterText: maxLength != null ? null : '',
             hintStyle: TextStyle(
               color: const Color(0xFF8B3A62).withOpacity(0.3),
             ),

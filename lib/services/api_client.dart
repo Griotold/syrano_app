@@ -176,7 +176,7 @@ class ApiClient {
       }),
     );
 
-    if (response.statusCode != 200) {
+    if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception(
           'createProfile failed: ${response.statusCode} ${response.body}');
     }

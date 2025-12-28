@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/profile.dart';
-import '../models/rizz_response.dart';
 import '../services/api_client.dart';
 import 'response_screen.dart';
 

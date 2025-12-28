@@ -4,7 +4,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_session.dart';
 import '../models/profile.dart';
 import '../services/api_client.dart';
-import '../services/storage_service.dart';
 import 'profile_input_screen.dart';
 import 'image_selection_screen.dart';
 
@@ -17,7 +16,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ApiClient _apiClient = ApiClient();
-  final StorageService _storageService = StorageService();
 
   bool _isInitializing = true;
   UserSession? _session;
@@ -71,10 +69,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadProfiles() async {
-    final profiles = await _storageService.getProfiles();
-    setState(() {
-      _profiles = profiles;
-    });
+    if (_userId == null) return;
+
+    try {
+      // API로 프로필 조회
+      final profiles = await _apiClient.getProfiles(_userId!);
+      setState(() {
+        _profiles = profiles;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar('프로필 로드 실패: $e', isError: true);
+    }
   }
 
   void _showSnackBar(String message, {bool isError = false}) {
@@ -90,10 +96,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _navigateToProfileInput() async {
+    if (_userId == null) {
+      _showSnackBar('사용자 정보를 불러오지 못했어요. 다시 시도해주세요!', isError: true);
+      return;
+    }
+
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => const ProfileInputScreen(),
+        builder: (context) => ProfileInputScreen(
+          userId: _userId!,
+        ),
       ),
     );
 
@@ -139,9 +152,15 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     if (confirmed == true) {
-      await _storageService.deleteProfile(profile.id);
-      await _loadProfiles();
-      _showSnackBar('프로필이 삭제되었어요');
+      try {
+        // API로 프로필 삭제
+        await _apiClient.deleteProfile(profile.id);
+        await _loadProfiles();
+        _showSnackBar('프로필이 삭제되었어요');
+      } catch (e) {
+        if (!mounted) return;
+        _showSnackBar('프로필 삭제 실패: $e', isError: true);
+      }
     }
   }
 

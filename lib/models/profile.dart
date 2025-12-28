@@ -1,88 +1,73 @@
-import 'dart:convert';
-
-/// 사용자 프로필 데이터 모델
+/// 사용자 프로필 데이터 모델 (백엔드 스키마 일치)
 class Profile {
-  final String id;
+  final String id; // 백엔드 UUID
+  final String userId; // 사용자 ID
   final String name;
   final int age;
-  final String mbti;
   final String gender;
-  final String? memo;
+  final String? memo; // MBTI 정보는 여기 포함
   final DateTime createdAt;
+  final DateTime updatedAt;
 
   Profile({
     required this.id,
+    required this.userId,
     required this.name,
     required this.age,
-    required this.mbti,
     required this.gender,
     this.memo,
     required this.createdAt,
+    required this.updatedAt,
   });
 
-  /// JSON 직렬화
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'age': age,
-      'mbti': mbti,
-      'gender': gender,
-      'memo': memo,
-      'createdAt': createdAt.toIso8601String(),
-    };
-  }
-
-  /// JSON 역직렬화
+  /// JSON 역직렬화 (백엔드 스키마)
   factory Profile.fromJson(Map<String, dynamic> json) {
     return Profile(
       id: json['id'] as String,
+      userId: json['user_id'] as String,
       name: json['name'] as String,
       age: json['age'] as int,
-      mbti: json['mbti'] as String,
       gender: json['gender'] as String,
       memo: json['memo'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: DateTime.parse(json['created_at'] as String),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
 
-  /// 새 프로필 생성 (ID와 생성일시 자동 생성)
-  factory Profile.create({
-    required String name,
-    required int age,
-    required String mbti,
-    required String gender,
-    String? memo,
-  }) {
-    return Profile(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: name,
-      age: age,
-      mbti: mbti,
-      gender: gender,
-      memo: memo,
-      createdAt: DateTime.now(),
-    );
+  /// JSON 직렬화 (백엔드 스키마)
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'user_id': userId,
+      'name': name,
+      'age': age,
+      'gender': gender,
+      'memo': memo,
+      'created_at': createdAt.toIso8601String(),
+      'updated_at': updatedAt.toIso8601String(),
+    };
   }
 
   /// 프로필 복사 (일부 값 변경)
   Profile copyWith({
     String? id,
+    String? userId,
     String? name,
     int? age,
-    String? mbti,
     String? gender,
     String? memo,
     DateTime? createdAt,
+    DateTime? updatedAt,
   }) {
     return Profile(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
       name: name ?? this.name,
       age: age ?? this.age,
-      mbti: mbti ?? this.mbti,
       gender: gender ?? this.gender,
       memo: memo ?? this.memo,
       createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

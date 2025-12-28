@@ -34,6 +34,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _initUser() async {
     final prefs = await SharedPreferences.getInstance();
+    
+    // ✅ 이 한 줄만 추가!
+    await prefs.remove('profiles');
+    
     final savedUserId = prefs.getString('user_id');
     final savedPremium = prefs.getBool('is_premium') ?? false;
 
@@ -443,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${profile.age}세 • ${profile.mbti} • ${profile.gender}',
+                        '${profile.age}세 • ${profile.gender}',
                         style: TextStyle(
                           fontSize: 14,
                           color: const Color(0xFF8B3A62).withOpacity(0.6),

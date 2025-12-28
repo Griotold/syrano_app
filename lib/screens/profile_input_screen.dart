@@ -17,15 +17,7 @@ class _ProfileInputScreenState extends State<ProfileInputScreen> {
   final _ageController = TextEditingController();
   final _memoController = TextEditingController();
 
-  String _selectedMbti = 'ENFP';
   String _selectedGender = '여성';
-
-  final List<String> _mbtiList = [
-    'ENFP', 'ENFJ', 'ENTP', 'ENTJ',
-    'ESFP', 'ESFJ', 'ESTP', 'ESTJ',
-    'INFP', 'INFJ', 'INTP', 'INTJ',
-    'ISFP', 'ISFJ', 'ISTP', 'ISTJ',
-  ];
 
   final List<String> _genderList = ['남성', '여성', '기타'];
 
@@ -42,17 +34,23 @@ class _ProfileInputScreenState extends State<ProfileInputScreen> {
       return;
     }
 
-    final profile = Profile.create(
+    // Profile.create() 제거되었으므로 수동 생성
+    // userId는 임시로 빈 문자열 (다음 작업에서 API 연동하면서 수정 예정)
+    final profile = Profile(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      userId: '', // 임시 빈 문자열 (다음 작업에서 API 연동하면서 수정 예정)
       name: _nameController.text.trim(),
       age: int.parse(_ageController.text.trim()),
-      mbti: _selectedMbti,
       gender: _selectedGender,
       memo: _memoController.text.trim().isEmpty
           ? null
           : _memoController.text.trim(),
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
     );
 
     try {
+      // 로컬 저장 (다음 작업에서 API로 변경 예정)
       await _storageService.saveProfile(profile);
       if (!mounted) return;
       Navigator.pop(context, true);
@@ -138,17 +136,6 @@ class _ProfileInputScreenState extends State<ProfileInputScreen> {
                 ),
                 const SizedBox(height: 20),
                 _buildDropdown(
-                  label: 'MBTI',
-                  value: _selectedMbti,
-                  items: _mbtiList,
-                  onChanged: (value) {
-                    setState(() {
-                      _selectedMbti = value!;
-                    });
-                  },
-                ),
-                const SizedBox(height: 20),
-                _buildDropdown(
                   label: '성별',
                   value: _selectedGender,
                   items: _genderList,
@@ -162,8 +149,8 @@ class _ProfileInputScreenState extends State<ProfileInputScreen> {
                 _buildTextField(
                   controller: _memoController,
                   label: '메모 (선택)',
-                  hint: '특별히 기억하고 싶은 내용을 적어보세요',
-                  maxLines: 3,
+                  hint: 'MBTI, 취미, 특징 등을 자유롭게 적어주세요\n예: ENFP, 영화 좋아함, 고양이 키움',
+                  maxLines: 4,
                 ),
                 const SizedBox(height: 40),
                 _buildSaveButton(),

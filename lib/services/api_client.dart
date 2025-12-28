@@ -116,13 +116,11 @@ class ApiClient {
 
   /// POST /rizz/analyze-image - 이미지 업로드 및 OCR + 추천 생성
   /// 백엔드에서 OCR과 LLM 처리를 모두 수행
+  /// 프로필 정보를 기반으로 개인화된 답장 생성
   Future<RizzResponse> analyzeImage({
     required String imagePath,
     required String userId,
-    String platform = 'kakao',
-    String relationship = 'first_meet',
-    String style = 'banmal',
-    String tone = 'friendly',
+    required String profileId,
     int numSuggestions = 3,
   }) async {
     final url = _uri('/rizz/analyze-image');
@@ -134,12 +132,9 @@ class ApiClient {
       await http.MultipartFile.fromPath('image', imagePath),
     );
 
-    // 메타데이터 추가
+    // 메타데이터 추가 - profile_id만 전달
     request.fields['user_id'] = userId;
-    request.fields['platform'] = platform;
-    request.fields['relationship'] = relationship;
-    request.fields['style'] = style;
-    request.fields['tone'] = tone;
+    request.fields['profile_id'] = profileId;
     request.fields['num_suggestions'] = numSuggestions.toString();
 
     final streamedResponse = await _client.send(request);

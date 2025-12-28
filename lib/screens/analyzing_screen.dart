@@ -46,11 +46,12 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
   Future<void> _startAnalysis() async {
     try {
       // 백엔드로 이미지 전송하여 OCR + 추천 생성
+      // 프로필 정보를 기반으로 개인화된 답장 생성
       final response = await _apiClient.analyzeImage(
         imagePath: widget.imagePath,
         userId: widget.userId,
-        // 프로필 정보를 기반으로 relationship 설정 가능
-        // 여기서는 기본값 사용
+        profileId: widget.profile.id,
+        numSuggestions: 3,
       );
 
       if (!mounted) return;

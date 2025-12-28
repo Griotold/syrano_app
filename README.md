@@ -426,124 +426,46 @@ final response = await _apiClient.analyzeImage(
   - Material Design 3
   - 반응형 레이아웃
 
-### Phase 2: 백엔드 Profile API 연동 (🔴 다음 작업)
+### Phase 2: 백엔드 Profile API 연동 (✅ 완료)
 
-**현재 상태:**  
-- ✅ **백엔드 Profile CRUD API는 이미 완료됨** (2025-12-27)
-- ❌ 플러터는 **로컬에만 저장**하고 백엔드 API를 사용하지 않음
-- ❌ 플러터 Profile 모델이 **백엔드 스키마와 불일치** (MBTI 있음)
+**완료 일자:** 2025-12-28
 
-**백엔드 Profile 스키마 (완료됨):**
+**완료 내용:**
 
-```python
-# app/models/profile.py
-class Profile(Base):
-    id = Column(String(36), primary_key=True)  # UUID
-    user_id = Column(String(36), ForeignKey('users.id'))
-    name = Column(String(100), nullable=False)
-    age = Column(Integer, nullable=True)
-    gender = Column(String(10), nullable=True)
-    memo = Column(Text, nullable=True)  # ✅ MBTI는 여기 포함 가능
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
-```
+1. ✅ **Profile 모델 백엔드 스키마 일치**
+   - MBTI 필드 제거 (memo에 포함)
+   - userId, updatedAt 필드 추가
+   - fromJson/toJson 백엔드 snake_case 형식 지원
 
-**백엔드 API 엔드포인트 (완료됨):**
+2. ✅ **Profile API 클라이언트 구현**
+   - `createProfile()` - POST /profiles (201 상태 코드 지원)
+   - `getProfiles()` - GET /profiles?user_id=xxx
+   - `deleteProfile()` - DELETE /profiles/{id}
 
-```python
-POST   /profiles              # 프로필 생성
-GET    /profiles?user_id=xxx  # 프로필 목록 조회
-GET    /profiles/{id}         # 프로필 조회
-PUT    /profiles/{id}         # 프로필 수정
-DELETE /profiles/{id}         # 프로필 삭제
-```
+3. ✅ **ProfileInputScreen & HomeScreen API 연동**
+   - 로컬 StorageService 완전 제거
+   - 백엔드가 단일 진실 공급원(Single Source of Truth)
+   - 프로필 생성/조회/삭제 모두 백엔드 API 사용
 
-**필요한 플러터 작업:**
+4. ✅ **analyzeImage API 개선**
+   - profile_id 전달로 간소화
+   - platform, relationship, style, tone 파라미터 제거
+   - 백엔드에서 프로필 정보 기반 프롬프트 생성
 
-1. **Profile 모델 수정 (MBTI 제거)**
+5. ✅ **UI 개선**
+   - 메모 입력 50자 제한 (오버플로우 해결)
+   - 카메라 버튼 제거 (갤러리만 사용)
+   - 이미지 선택 화면 레이아웃 최적화
+   - 버튼 간격 조정 (16px 통일)
 
-```dart
-// lib/models/profile.dart (현재 - ❌)
-class Profile {
-  final String id;
-  final String name;
-  final int age;
-  final String mbti;  // ❌ 백엔드에 없음 - 제거 필요
-  final String gender;
-  final String? memo;
-  final DateTime createdAt;
-}
+**백엔드 연동 상태:**
+- ✅ 익명 로그인: `POST /auth/anonymous`
+- ✅ 프로필 생성: `POST /profiles`
+- ✅ 프로필 조회: `GET /profiles?user_id=xxx`
+- ✅ 프로필 삭제: `DELETE /profiles/{id}`
+- ✅ 이미지 분석: `POST /rizz/analyze-image` (profile_id 포함)
 
-// lib/models/profile.dart (수정 후 - ✅)
-class Profile {
-  final String id;          // 백엔드 UUID
-  final String userId;      // ✅ 추가
-  final String name;
-  final int age;
-  final String gender;
-  final String? memo;       // ✅ MBTI는 여기 포함
-  final DateTime createdAt;
-  final DateTime updatedAt; // ✅ 추가
-}
-```
-
-2. **API 클라이언트 메서드 추가**
-
-```dart
-// lib/services/api_client.dart (추가 필요)
-
-Future<Profile> createProfile({
-  required String userId,
-  required String name,
-  required int age,
-  required String gender,
-  String? memo,
-}) async { ... }
-
-Future<List<Profile>> getProfiles(String userId) async { ... }
-
-Future<void> deleteProfile(String profileId) async { ... }
-```
-
-3. **analyzeImage에 profile_id 추가**
-
-```dart
-// 현재 (❌)
-await _apiClient.analyzeImage(
-  imagePath: imagePath,
-  userId: userId,
-  platform: 'kakao',
-  relationship: 'first_meet',
-  style: 'banmal',
-  tone: 'friendly',
-);
-
-// 수정 후 (✅)
-await _apiClient.analyzeImage(
-  imagePath: imagePath,
-  userId: userId,
-  profileId: profile.id, // ✅ 추가
-  numSuggestions: 3,
-);
-```
-
-**백엔드는 이미 준비됨:**
-
-```python
-# app/routers/rizz.py (이미 구현됨)
-@router.post("/analyze-image")
-async def analyze_image(
-    image: UploadFile,
-    user_id: str = Form(...),
-    profile_id: str = Form(...),  # ✅ 이미 지원
-    num_suggestions: int = Form(3),
-):
-    # 프로필 조회 → 프롬프트에 반영
-    profile = await get_profile(profile_id)
-    # ...
-```
-
-**예상 작업 시간:** 2-3시간 (플러터만)
+**다음 단계: Phase 3 (디자인 개선)**
 
 ---
 

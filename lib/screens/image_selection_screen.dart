@@ -124,8 +124,9 @@ class _ImageSelectionScreenState extends State<ImageSelectionScreen>
                 _buildHeader(),
                 const SizedBox(height: 32),
                 _buildImagePreview(),
-                const SizedBox(height: 24),
-                _buildImageSelectionButtons(),
+                const SizedBox(height: 16),
+                _buildGalleryButton(),
+                const SizedBox(height: 16),
                 const Spacer(),
                 _buildAnalyzeButton(),
               ],
@@ -167,7 +168,7 @@ class _ImageSelectionScreenState extends State<ImageSelectionScreen>
         ),
         const SizedBox(height: 8),
         Text(
-          '갤러리나 카메라로 대화 이미지를 선택하세요',
+          '갤러리에서 채팅 스크린샷을 선택하세요',
           style: TextStyle(
             fontSize: 14,
             color: const Color(0xFF8B3A62).withOpacity(0.6),
@@ -178,10 +179,8 @@ class _ImageSelectionScreenState extends State<ImageSelectionScreen>
   }
 
   Widget _buildImagePreview() {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-      height: _selectedImage != null ? 320 : 240,
+    return Container(
+      height: 400,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         boxShadow: _selectedImage != null
@@ -211,6 +210,7 @@ class _ImageSelectionScreenState extends State<ImageSelectionScreen>
                       _selectedImage!,
                       fit: BoxFit.cover,
                       width: double.infinity,
+                      height: double.infinity,
                     ),
                   ),
                 ),
@@ -298,7 +298,7 @@ class _ImageSelectionScreenState extends State<ImageSelectionScreen>
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      '갤러리나 카메라로 선택할 수 있어요',
+                      '갤러리에서 선택할 수 있어요',
                       style: TextStyle(
                         fontSize: 13,
                         color: const Color(0xFF8B3A62).withOpacity(0.5),
@@ -311,62 +311,46 @@ class _ImageSelectionScreenState extends State<ImageSelectionScreen>
     );
   }
 
-  Widget _buildImageSelectionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildImageButton(
-            icon: Icons.photo_library_outlined,
-            label: '갤러리',
-            onPressed: () => _pickImage(ImageSource.gallery),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildImageButton(
-            icon: Icons.camera_alt_outlined,
-            label: '카메라',
-            onPressed: () => _pickImage(ImageSource.camera),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildImageButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onPressed,
-  }) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.8),
+  Widget _buildGalleryButton() {
+    return Align(
+      alignment: Alignment.bottomRight,
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width / 3,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _pickImage(ImageSource.gallery),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: const Color(0xFFFFD4D4),
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 20, color: const Color(0xFF8B3A62)),
-              const SizedBox(width: 8),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF8B3A62),
+            child: Container(
+              height: 56,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFFFFD4D4),
+                  width: 1.5,
                 ),
               ),
-            ],
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.photo_library_outlined,
+                    size: 20,
+                    color: const Color(0xFF8B3A62),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '갤러리',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: const Color(0xFF8B3A62),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

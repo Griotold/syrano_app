@@ -180,7 +180,7 @@ class _ImageSelectionScreenState extends State<ImageSelectionScreen>
 
   Widget _buildImagePreview() {
     return Container(
-      height: 400,
+      height: 360,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
         boxShadow: _selectedImage != null

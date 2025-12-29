@@ -7,12 +7,18 @@ class AnalyzingScreen extends StatefulWidget {
   final String imagePath;
   final Profile profile;
   final String userId;
+  final int usedCount;
+  final int totalCount;
+  final bool isPremium;
 
   const AnalyzingScreen({
     super.key,
     required this.imagePath,
     required this.profile,
     required this.userId,
+    required this.usedCount,
+    required this.totalCount,
+    required this.isPremium,
   });
 
   @override
@@ -63,6 +69,9 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
           builder: (context) => ResponseScreen(
             profile: widget.profile,
             response: response,
+            usedCount: widget.usedCount + 1,
+            totalCount: widget.totalCount,
+            isPremium: widget.isPremium,
           ),
         ),
       );

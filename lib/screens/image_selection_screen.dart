@@ -2,16 +2,24 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/profile.dart';
+import '../widgets/usage_badge.dart';
+import '../widgets/usage_dialog.dart';
 import 'analyzing_screen.dart';
 
 class ImageSelectionScreen extends StatefulWidget {
   final Profile profile;
   final String userId;
+  final int usedCount;
+  final int totalCount;
+  final bool isPremium;
 
   const ImageSelectionScreen({
     super.key,
     required this.profile,
     required this.userId,
+    required this.usedCount,
+    required this.totalCount,
+    required this.isPremium,
   });
 
   @override
@@ -77,6 +85,9 @@ class _ImageSelectionScreenState extends State<ImageSelectionScreen>
           imagePath: _selectedImage!.path,
           profile: widget.profile,
           userId: widget.userId,
+          usedCount: widget.usedCount,
+          totalCount: widget.totalCount,
+          isPremium: widget.isPremium,
         ),
       ),
     );
@@ -102,6 +113,20 @@ class _ImageSelectionScreenState extends State<ImageSelectionScreen>
             color: Color(0xFF8B3A62),
           ),
         ),
+        actions: [
+          UsageBadge(
+            usedCount: widget.usedCount,
+            totalCount: widget.totalCount,
+            isPremium: widget.isPremium,
+            onTap: () => showUsageDialog(
+              context,
+              isPremium: widget.isPremium,
+              usedCount: widget.usedCount,
+              totalCount: widget.totalCount,
+            ),
+          ),
+          const SizedBox(width: 16),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(

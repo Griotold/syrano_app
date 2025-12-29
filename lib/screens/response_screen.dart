@@ -2,15 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/profile.dart';
 import '../models/rizz_response.dart';
+import '../widgets/usage_badge.dart';
+import '../widgets/usage_dialog.dart';
 
 class ResponseScreen extends StatefulWidget {
   final Profile profile;
   final RizzResponse response;
+  final int usedCount;
+  final int totalCount;
+  final bool isPremium;
 
   const ResponseScreen({
     super.key,
     required this.profile,
     required this.response,
+    required this.usedCount,
+    required this.totalCount,
+    required this.isPremium,
   });
 
   @override
@@ -82,11 +90,18 @@ class _ResponseScreenState extends State<ResponseScreen>
           ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Color(0xFF8B3A62)),
-            onPressed: _goBack,
-            tooltip: '다시 시작하기',
+          UsageBadge(
+            usedCount: widget.usedCount,
+            totalCount: widget.totalCount,
+            isPremium: widget.isPremium,
+            onTap: () => showUsageDialog(
+              context,
+              isPremium: widget.isPremium,
+              usedCount: widget.usedCount,
+              totalCount: widget.totalCount,
+            ),
           ),
+          const SizedBox(width: 16),
         ],
       ),
       body: Container(

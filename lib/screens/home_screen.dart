@@ -4,6 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_session.dart';
 import '../models/profile.dart';
 import '../services/api_client.dart';
+import '../widgets/usage_badge.dart';
+import '../widgets/usage_dialog.dart';
 import 'profile_input_screen.dart';
 import 'image_selection_screen.dart';
 
@@ -14,12 +16,15 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with WidgetsBindingObserver {
   final ApiClient _apiClient = ApiClient();
 
   bool _isInitializing = true;
   UserSession? _session;
   List<Profile> _profiles = [];
+  int _usedCount = 0;
+  final int _totalCount = 5;
 
   String? get _userId => _session?.userId;
   bool get _isPremium => _session?.isPremium ?? false;
@@ -27,7 +32,22 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initUser();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // 화면 복귀 시 사용량 갱신
+      _loadUsage();
+    }
   }
 
   Future<void> _initUser() async {
@@ -60,8 +80,9 @@ class _HomeScreenState extends State<HomeScreen> {
       }
     }
 
-    // 프로필 목록 로드
+    // 프로필 목록 및 사용량 로드
     await _loadProfiles();
+    await _loadUsage();
 
     setState(() {
       _isInitializing = false;
@@ -80,6 +101,44 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (!mounted) return;
       _showSnackBar('프로필 로드 실패: $e', isError: true);
+    }
+  }
+
+  Future<void> _loadUsage() async {
+    if (_userId == null) return;
+
+    try {
+      final usage = await _apiClient.getUsage(_userId!);
+
+      // 디버깅 출력
+      print('==========================================');
+      print('DEBUG: Usage API Response');
+      print(usage);
+      print('==========================================');
+
+      setState(() {
+        // 안전한 처리: 두 가지 케이스 모두 대응
+        if (usage.containsKey('remaining_count')) {
+          // Case A: remaining_count가 있으면 역계산
+          final remaining = usage['remaining_count'] as int? ?? _totalCount;
+          _usedCount = _totalCount - remaining;
+          print('Using remaining_count: $_usedCount used, $remaining remaining');
+        } else if (usage.containsKey('used_count')) {
+          // Case B: used_count가 있으면 직접 사용
+          _usedCount = usage['used_count'] as int? ?? 0;
+          print('Using used_count: $_usedCount');
+        } else {
+          // Case C: 둘 다 없으면 기본값
+          print('WARNING: No usage count in API response');
+          _usedCount = 0;
+        }
+      });
+    } catch (e) {
+      print('Usage load failed: $e');
+      // 에러 시 안전한 기본값
+      setState(() {
+        _usedCount = 0;
+      });
     }
   }
 
@@ -127,9 +186,15 @@ class _HomeScreenState extends State<HomeScreen> {
         builder: (context) => ImageSelectionScreen(
           profile: profile,
           userId: _userId!,
+          usedCount: _usedCount,
+          totalCount: _totalCount,
+          isPremium: _isPremium,
         ),
       ),
     );
+
+    // 화면 복귀 시 사용량 갱신
+    await _loadUsage();
   }
 
   Future<void> _deleteProfile(Profile profile) async {
@@ -184,33 +249,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         actions: [
-          if (_isPremium)
-            Container(
-              margin: const EdgeInsets.only(right: 16, top: 12, bottom: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFFFFB5B5), Color(0xFFE89BB5)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFFE89BB5).withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: const Text(
-                'PREMIUM',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                  letterSpacing: 0.8,
-                ),
-              ),
+          UsageBadge(
+            usedCount: _usedCount,
+            totalCount: _totalCount,
+            isPremium: _isPremium,
+            onTap: () => showUsageDialog(
+              context,
+              isPremium: _isPremium,
+              usedCount: _usedCount,
+              totalCount: _totalCount,
             ),
+          ),
+          const SizedBox(width: 16),
         ],
       ),
       body: Container(

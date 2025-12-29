@@ -149,6 +149,19 @@ class ApiClient {
     return RizzResponse.fromJson(data);
   }
 
+  /// GET /billing/usage?user_id=xxx - 사용량 조회
+  Future<Map<String, dynamic>> getUsage(String userId) async {
+    final url = _uri('/billing/usage', query: {'user_id': userId});
+
+    final response = await _client.get(url);
+
+    if (response.statusCode != 200) {
+      throw Exception('getUsage failed: ${response.statusCode}');
+    }
+
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
+
   /// POST /profiles - 프로필 생성
   Future<Profile> createProfile({
     required String userId,

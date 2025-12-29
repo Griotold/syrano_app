@@ -85,7 +85,7 @@ class _ResponseScreenState extends State<ResponseScreen>
           IconButton(
             icon: const Icon(Icons.refresh, color: Color(0xFF8B3A62)),
             onPressed: _goBack,
-            tooltip: '다시 분석하기',
+            tooltip: '다시 시작하기',
           ),
         ],
       ),
@@ -345,7 +345,7 @@ class _ResponseScreenState extends State<ResponseScreen>
                       Icon(Icons.refresh, size: 20, color: Color(0xFF8B3A62)),
                       SizedBox(width: 8),
                       Text(
-                        '다시 분석',
+                        '다시 시작',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,

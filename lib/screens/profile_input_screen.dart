@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/profile.dart';
 import '../services/api_client.dart';
 
 class ProfileInputScreen extends StatefulWidget {

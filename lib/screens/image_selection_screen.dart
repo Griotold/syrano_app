@@ -245,66 +245,69 @@ class _ImageSelectionScreenState extends State<ImageSelectionScreen>
                 ),
               ],
             )
-          : Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.6),
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: const Color(0xFFFFD4D4),
-                  width: 2,
+          : GestureDetector(
+              onTap: () => _pickImage(ImageSource.gallery),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.6),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: const Color(0xFFFFD4D4),
+                    width: 2,
+                  ),
                 ),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    AnimatedBuilder(
-                      animation: _pulseController,
-                      builder: (context, child) {
-                        return Transform.scale(
-                          scale: 1.0 + (_pulseController.value * 0.1),
-                          child: Container(
-                            padding: const EdgeInsets.all(20),
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  Color.lerp(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AnimatedBuilder(
+                        animation: _pulseController,
+                        builder: (context, child) {
+                          return Transform.scale(
+                            scale: 1.0 + (_pulseController.value * 0.1),
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Color.lerp(
+                                      const Color(0xFFFFE4E1),
+                                      const Color(0xFFFFD4D4),
+                                      _pulseController.value,
+                                    )!,
                                     const Color(0xFFFFE4E1),
-                                    const Color(0xFFFFD4D4),
-                                    _pulseController.value,
-                                  )!,
-                                  const Color(0xFFFFE4E1),
-                                ],
+                                  ],
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.add_photo_alternate_outlined,
+                                size: 48,
+                                color: Color(0xFFE89BB5),
                               ),
                             ),
-                            child: const Icon(
-                              Icons.add_photo_alternate_outlined,
-                              size: 48,
-                              color: Color(0xFFE89BB5),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      '채팅 스크린샷을 추가해주세요',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF8B3A62),
-                        fontWeight: FontWeight.w500,
+                          );
+                        },
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '갤러리에서 선택할 수 있어요',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: const Color(0xFF8B3A62).withOpacity(0.5),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '채팅 스크린샷을 추가해주세요',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF8B3A62),
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        '갤러리에서 선택할 수 있어요',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: const Color(0xFF8B3A62).withOpacity(0.5),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

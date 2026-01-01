@@ -162,6 +162,37 @@ class ApiClient {
     return jsonDecode(response.body) as Map<String, dynamic>;
   }
 
+  /// POST /billing/subscribe - 프리미엄 구독
+  Future<UserSession> subscribe({
+    required String userId,
+    required String planType, // "weekly" 또는 "monthly"
+  }) async {
+    final url = _uri('/billing/subscribe');
+
+    try {
+      final response = await _client.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'user_id': userId,
+          'plan_type': planType,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+        return UserSession(
+          userId: data['user_id'] as String,
+          isPremium: data['is_premium'] as bool,
+        );
+      } else {
+        throw Exception('구독 실패: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('구독 API 호출 실패: $e');
+    }
+  }
+
   /// POST /profiles - 프로필 생성
   Future<Profile> createProfile({
     required String userId,

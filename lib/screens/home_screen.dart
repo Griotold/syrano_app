@@ -46,28 +46,49 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // 화면 복귀 시 사용량 갱신
+      // 화면 복귀 시 사용량 및 구독 상태 갱신
+      _verifySubscription();
       _loadUsage();
     }
   }
 
   Future<void> _initUser() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // ✅ 이 한 줄만 추가!
     await prefs.remove('profiles');
-    
+
     final savedUserId = prefs.getString('user_id');
-    final savedPremium = prefs.getBool('is_premium') ?? false;
 
     if (savedUserId != null) {
-      setState(() {
-        _session = UserSession(
-          userId: savedUserId,
-          isPremium: savedPremium,
-        );
-      });
+      // 백엔드에서 실제 구독 상태 검증
+      try {
+        final verifiedSession =
+            await _apiClient.fetchSubscription(savedUserId);
+
+        // SharedPreferences 업데이트 (서버가 진실 공급원)
+        await prefs.setBool('is_premium', verifiedSession.isPremium);
+
+        setState(() {
+          _session = verifiedSession;
+        });
+
+        print(
+            '✅ Subscription verified from backend: isPremium=${verifiedSession.isPremium}');
+      } catch (e) {
+        print('⚠️ Backend verification failed, using cached data: $e');
+
+        // 네트워크 오류 시 로컬 캐시 사용 (fallback)
+        final cachedPremium = prefs.getBool('is_premium') ?? false;
+        setState(() {
+          _session = UserSession(
+            userId: savedUserId,
+            isPremium: cachedPremium,
+          );
+        });
+      }
     } else {
+      // 최초 로그인
       try {
         final newSession = await _apiClient.anonymousLogin();
         await prefs.setString('user_id', newSession.userId);
@@ -88,6 +109,44 @@ class _HomeScreenState extends State<HomeScreen>
     setState(() {
       _isInitializing = false;
     });
+  }
+
+  Future<void> _verifySubscription() async {
+    if (_userId == null) return;
+
+    try {
+      final verifiedSession = await _apiClient.fetchSubscription(_userId!);
+      final prefs = await SharedPreferences.getInstance();
+
+      // 이전 상태와 비교
+      final previousPremiumStatus = _isPremium;
+      final newPremiumStatus = verifiedSession.isPremium;
+
+      // SharedPreferences 및 상태 업데이트
+      await prefs.setBool('is_premium', newPremiumStatus);
+      setState(() {
+        _session = verifiedSession;
+      });
+
+      // 구독 상태가 변경된 경우 알림
+      if (previousPremiumStatus && !newPremiumStatus) {
+        // 프리미엄 → 무료 (구독 만료)
+        if (!mounted) return;
+        _showSnackBar('프리미엄 구독이 만료되었습니다.', isError: true);
+        print('⚠️ Subscription expired');
+      } else if (!previousPremiumStatus && newPremiumStatus) {
+        // 무료 → 프리미엄 (새 구독)
+        if (!mounted) return;
+        _showSnackBar('프리미엄 구독이 활성화되었습니다! 🎉');
+        print('✅ Subscription activated');
+      } else {
+        // 상태 변화 없음
+        print('✅ Subscription status unchanged: isPremium=$newPremiumStatus');
+      }
+    } catch (e) {
+      // 네트워크 오류 등으로 검증 실패 시 조용히 실패 (로컬 상태 유지)
+      print('⚠️ Subscription verification failed on app resume: $e');
+    }
   }
 
   Future<void> _loadProfiles() async {
@@ -234,13 +293,38 @@ class _HomeScreenState extends State<HomeScreen>
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          Navigator.push(
+        onTap: () async {
+          if (_userId == null) {
+            _showSnackBar('로그인 정보를 불러오지 못했어요. 다시 시도해주세요!',
+                isError: true);
+            return;
+          }
+
+          final result = await Navigator.push<bool>(
             context,
             MaterialPageRoute(
-              builder: (context) => const SubscriptionScreen(),
+              builder: (context) => SubscriptionScreen(
+                userId: _userId!,
+              ),
             ),
           );
+
+          // 구독 성공 시 전체 화면 새로고침
+          if (result == true) {
+            // SharedPreferences 다시 읽기 + 상태 업데이트
+            final prefs = await SharedPreferences.getInstance();
+            final isPremium = prefs.getBool('is_premium') ?? false;
+
+            setState(() {
+              _session = UserSession(
+                userId: _userId!,
+                isPremium: isPremium,
+              );
+            });
+
+            // 사용량도 새로고침 (프리미엄이면 무제한)
+            await _loadUsage();
+          }
         },
         borderRadius: BorderRadius.circular(20),
         child: Container(
@@ -310,6 +394,7 @@ class _HomeScreenState extends State<HomeScreen>
           isPremium: _isPremium,
           usedCount: _usedCount,
           totalCount: _totalCount,
+          userId: _userId,
         ),
       );
     }
@@ -319,7 +404,7 @@ class _HomeScreenState extends State<HomeScreen>
     return IconButton(
       icon: const Icon(
         Icons.settings_outlined,
-        color: Color(0xFF8B3A62),
+        color: Colors.white,
         size: 24,
       ),
       onPressed: () {
@@ -342,9 +427,8 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFF8F3),
-      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: const Color(0xFFC8879E),
         elevation: 0,
         centerTitle: false,
         title: const Text(
@@ -354,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen>
             fontSize: 28,
             fontWeight: FontWeight.w300,
             letterSpacing: 1.2,
-            color: Color(0xFF8B3A62),
+            color: Colors.white,
           ),
         ),
         actions: [

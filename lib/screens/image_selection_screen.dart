@@ -123,6 +123,7 @@ class _ImageSelectionScreenState extends State<ImageSelectionScreen>
               isPremium: widget.isPremium,
               usedCount: widget.usedCount,
               totalCount: widget.totalCount,
+              userId: widget.userId,
             ),
           ),
           const SizedBox(width: 16),

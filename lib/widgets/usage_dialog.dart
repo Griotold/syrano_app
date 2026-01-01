@@ -28,6 +28,7 @@ void showUsageDialog(
   required bool isPremium,
   required int usedCount,
   required int totalCount,
+  String? userId, // userId 옵셔널 파라미터 추가
 }) {
   final remainingCount = totalCount - usedCount;
 
@@ -229,12 +230,16 @@ void showUsageDialog(
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SubscriptionScreen(),
-                ),
-              );
+              if (userId != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SubscriptionScreen(
+                      userId: userId,
+                    ),
+                  ),
+                );
+              }
             },
             child: const Text(
               '프리미엄 보기',

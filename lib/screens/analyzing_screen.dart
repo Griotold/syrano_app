@@ -72,6 +72,7 @@ class _AnalyzingScreenState extends State<AnalyzingScreen>
             usedCount: widget.usedCount + 1,
             totalCount: widget.totalCount,
             isPremium: widget.isPremium,
+            userId: widget.userId,
           ),
         ),
       );

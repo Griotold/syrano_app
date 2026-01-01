@@ -11,6 +11,7 @@ class ResponseScreen extends StatefulWidget {
   final int usedCount;
   final int totalCount;
   final bool isPremium;
+  final String userId;
 
   const ResponseScreen({
     super.key,
@@ -19,6 +20,7 @@ class ResponseScreen extends StatefulWidget {
     required this.usedCount,
     required this.totalCount,
     required this.isPremium,
+    required this.userId,
   });
 
   @override
@@ -99,6 +101,7 @@ class _ResponseScreenState extends State<ResponseScreen>
               isPremium: widget.isPremium,
               usedCount: widget.usedCount,
               totalCount: widget.totalCount,
+              userId: widget.userId,
             ),
           ),
           const SizedBox(width: 16),

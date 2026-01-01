@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../screens/subscription_screen.dart';
 
 /// 혜택 항목 위젯 (프리미엄 다이얼로그용)
 Widget _buildBenefitItem(IconData icon, String text) {
@@ -228,11 +229,10 @@ void showUsageDialog(
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: 구독 화면으로 이동
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('구독 화면은 곧 추가될 예정이에요!'),
-                  backgroundColor: Color(0xFFE89BB5),
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SubscriptionScreen(),
                 ),
               );
             },

@@ -8,6 +8,7 @@ import '../widgets/usage_badge.dart';
 import '../widgets/usage_dialog.dart';
 import 'profile_input_screen.dart';
 import 'image_selection_screen.dart';
+import 'subscription_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -229,6 +230,114 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
+  Widget _buildPremiumButton() {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const SubscriptionScreen(),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFFB5B5), Color(0xFFE89BB5)],
+            ),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.workspace_premium, size: 16, color: Colors.white),
+              SizedBox(width: 6),
+              Text(
+                '프리미엄 가입',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRightBadge() {
+    if (_isPremium) {
+      // 프리미엄 배지
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white, width: 1.5),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.workspace_premium, size: 16, color: Colors.white),
+            SizedBox(width: 4),
+            Text(
+              'PRO',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // 사용량 배지 (기존)
+      return UsageBadge(
+        usedCount: _usedCount,
+        totalCount: _totalCount,
+        isPremium: _isPremium,
+        onTap: () => showUsageDialog(
+          context,
+          isPremium: _isPremium,
+          usedCount: _usedCount,
+          totalCount: _totalCount,
+        ),
+      );
+    }
+  }
+
+  Widget _buildSettingsButton() {
+    return IconButton(
+      icon: const Icon(
+        Icons.settings_outlined,
+        color: Color(0xFF8B3A62),
+        size: 24,
+      ),
+      onPressed: () {
+        // TODO: 설정 화면 구현 후 네비게이션 추가
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('설정 화면은 곧 추가될 예정입니다!'),
+            backgroundColor: const Color(0xFFD4A5A5),
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -237,7 +346,7 @@ class _HomeScreenState extends State<HomeScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         title: const Text(
           'Syrano',
           style: TextStyle(
@@ -249,17 +358,20 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ),
         actions: [
-          UsageBadge(
-            usedCount: _usedCount,
-            totalCount: _totalCount,
-            isPremium: _isPremium,
-            onTap: () => showUsageDialog(
-              context,
-              isPremium: _isPremium,
-              usedCount: _usedCount,
-              totalCount: _totalCount,
-            ),
-          ),
+          // 무료 유저만: 프리미엄 버튼 (왼쪽)
+          if (!_isPremium) ...[
+            const SizedBox(width: 16),
+            _buildPremiumButton(),
+          ],
+
+          const Spacer(), // 오른쪽으로 밀기
+
+          // 사용량 또는 PRO 배지
+          _buildRightBadge(),
+          const SizedBox(width: 12),
+
+          // 설정 버튼
+          _buildSettingsButton(),
           const SizedBox(width: 16),
         ],
       ),

@@ -214,6 +214,131 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  void _showSubscriptionInfo() {
+    // 플랜 타입 한글 변환
+    String planName = '월간 플랜';
+    String planPrice = '₩4,900/월';
+
+    if (_session?.planType == 'weekly') {
+      planName = '주간 플랜';
+      planPrice = '₩1,900/주';
+    }
+
+    // 만료일 포맷팅
+    String expirationText = '정보 없음';
+    if (_session?.expiresAt != null) {
+      final expiresAt = _session!.expiresAt!;
+      expirationText = '${expiresAt.year}년 ${expiresAt.month}월 ${expiresAt.day}일';
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text(
+          '프리미엄 구독 정보',
+          style: TextStyle(
+            fontFamily: 'serif',
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF8B3A62),
+          ),
+          textAlign: TextAlign.center,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 왕관 아이콘
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.workspace_premium,
+                size: 48,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // 플랜 타입
+            Text(
+              planName,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF8B3A62),
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // 다음 결제일
+            Text(
+              '다음 결제일: $expirationText',
+              style: TextStyle(
+                fontSize: 14,
+                color: const Color(0xFF8B3A62).withOpacity(0.7),
+              ),
+            ),
+            const SizedBox(height: 4),
+
+            // 가격
+            Text(
+              planPrice,
+              style: TextStyle(
+                fontSize: 14,
+                color: const Color(0xFF8B3A62).withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              '확인',
+              style: TextStyle(
+                color: Color(0xFF8B3A62),
+                fontSize: 16,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: 구독 관리 화면 (추후 구현)
+              _showSnackBar('구독 관리 기능은 곧 추가될 예정입니다!');
+            },
+            child: const Text(
+              '구독 관리',
+              style: TextStyle(
+                color: Color(0xFFE89BB5),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _calculateDaysUntilExpiration() {
+    if (!_isPremium || _session?.expiresAt == null) {
+      return 99; // 만료 없음
+    }
+
+    final now = DateTime.now();
+    final expiresAt = _session!.expiresAt!;
+    return expiresAt.difference(now).inDays;
+  }
+
   Future<void> _navigateToProfileInput() async {
     if (_userId == null) {
       _showSnackBar('사용자 정보를 불러오지 못했어요. 다시 시도해주세요!', isError: true);
@@ -357,30 +482,33 @@ class _HomeScreenState extends State<HomeScreen>
 
   Widget _buildRightBadge() {
     if (_isPremium) {
-      // 프리미엄 배지
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: Colors.white, width: 1.5),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.workspace_premium, size: 16, color: Colors.white),
-            SizedBox(width: 4),
-            Text(
-              'PRO',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
+      // 프리미엄 배지 (탭 가능)
+      return GestureDetector(
+        onTap: _showSubscriptionInfo,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
             ),
-          ],
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white, width: 1.5),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.workspace_premium, size: 16, color: Colors.white),
+              SizedBox(width: 4),
+              Text(
+                'PRO',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
         ),
       );
     } else {

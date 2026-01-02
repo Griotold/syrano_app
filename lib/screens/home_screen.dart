@@ -12,6 +12,7 @@ import '../widgets/usage_dialog.dart';
 import 'profile_input_screen.dart';
 import 'image_selection_screen.dart';
 import 'subscription_screen.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -574,15 +575,10 @@ class _HomeScreenState extends State<HomeScreen>
         size: 24,
       ),
       onPressed: () {
-        // TODO: 설정 화면 구현 후 네비게이션 추가
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('설정 화면은 곧 추가될 예정입니다!'),
-            backgroundColor: const Color(0xFFD4A5A5),
-            behavior: SnackBarBehavior.floating,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            margin: const EdgeInsets.all(16),
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const SettingsScreen(),
           ),
         );
       },

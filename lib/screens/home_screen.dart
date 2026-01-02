@@ -1,5 +1,8 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/user_session.dart';
 import '../models/profile.dart';
@@ -310,10 +313,9 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
-              // TODO: 구독 관리 화면 (추후 구현)
-              _showSnackBar('구독 관리 기능은 곧 추가될 예정입니다!');
+              await _openSubscriptionManagement();
             },
             child: const Text(
               '구독 관리',
@@ -337,6 +339,42 @@ class _HomeScreenState extends State<HomeScreen>
     final now = DateTime.now();
     final expiresAt = _session!.expiresAt!;
     return expiresAt.difference(now).inDays;
+  }
+
+  Future<void> _openSubscriptionManagement() async {
+    try {
+      // iOS: App Store 구독 관리
+      // Android: Play Store 구독 관리
+
+      final Uri url;
+
+      if (Platform.isIOS) {
+        // iOS: App Store 구독 관리 화면
+        url = Uri.parse('https://apps.apple.com/account/subscriptions');
+      } else {
+        // Android: Play Store 구독 관리 화면
+        url = Uri.parse('https://play.google.com/store/account/subscriptions');
+      }
+
+      if (await canLaunchUrl(url)) {
+        await launchUrl(
+          url,
+          mode: LaunchMode.externalApplication, // 외부 브라우저/앱에서 열기
+        );
+      } else {
+        if (!mounted) return;
+        _showSnackBar(
+          '구독 관리 화면을 열 수 없습니다. 설정 앱에서 직접 확인해주세요.',
+          isError: true,
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar(
+        '오류가 발생했습니다: $e',
+        isError: true,
+      );
+    }
   }
 
   Future<void> _navigateToProfileInput() async {
